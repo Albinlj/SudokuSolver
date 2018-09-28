@@ -32,6 +32,7 @@ namespace SudokuSolver {
             return newBoard;
         }
 
+        //Looks through the board too find coordinates of the empty squares
         public void FindEmptyCoordinates() {
             EmptyCoords.Clear();
             for (int y = 0; y < 9; y++) {
@@ -120,26 +121,32 @@ namespace SudokuSolver {
             int tryCount = 0;
             int depth = 0;
             FindEmptyCoordinates();
+
+            //This is where the solving begins. We try 1-9 for the first square.
             for (int i = 9; i >= 1; i--) {
                 MakeAttempt(EmptyCoords[depth].Item1, EmptyCoords[depth].Item2, i);
             }
-
+            //And the solving is done! We have looped through 1-9 in the first square,
+            //and recursively every possible combination for the following squares.
+            //We return a list of all the found solutions. This will be empty if it is unsolvable.
             return solutions;
 
+            //Nested method - this is the one that gets called recursively.
             void MakeAttempt(int y, int x, int num) {
                 tryCount++;
 
-                // Checks row and column simultaneously
+                // Checks row and column simultaneously to see if they contain the number currently being guessed. 
+
                 for (int i = 0; i < 9; i++) {
                     if (Grid[i, x] == num || Grid[y, i] == num) {
+                        // If it already exists, the number guessed in the current square must be wrong! 
+                        // We return, and end up where this method was called before.
                         return;
                     }
                 }
-
+                // Check Block in the same way
                 int blockX = x / 3;
                 int blockY = y / 3;
-
-                // Check Block
                 for (int qx = 0; qx < 3; qx++) {
                     for (int qy = 0; qy < 3; qy++) {
                         if (Grid[blockY * 3 + qy, blockX * 3 + qx] == num) {
@@ -148,20 +155,27 @@ namespace SudokuSolver {
                     }
                 }
 
+                //The number currently being guessed was not found in the same row/col/block! 
                 Grid[y, x] = num;
                 depth++;
+
+                //See if the sudoku is solved by checking if the current "calldepth" is the same as the amount of empty squares.
                 if (depth == EmptyCoords.Count) {
-                    //Then solved
                     Console.WriteLine($"Found solution recursively in {tryCount} tries.");
                     solutions.Add(Grid);
                     PrintGrid();
                 }
+                //If it is not solved, continue by guessing a number for the next empty square.
                 else {
                     for (int i = 9; i >= 1; i--) {
                         MakeAttempt(EmptyCoords[depth].Item1, EmptyCoords[depth].Item2, i);
+                        //THIS is the place referred to below and above!
                     }
                 }
 
+                //If we've reached this point, the next square could not contain 1-9.
+                //Therefore - the number currently in this square must be wrong! Erase it.
+                //When we reach the end of this method, we will go back to the previous "Layer" of recusion call, and try another number for this square.
                 depth--;
                 Grid[y, x] = 0;
             }
